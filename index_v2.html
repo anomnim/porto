@@ -34,19 +34,44 @@
             border: 1px solid #ccc;
             touch-action: none; /* Penting untuk interaksi sentuh */
         }
+        /* Style untuk Kalender */
+        .date-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+        }
+        .date-cell {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background-color 0.1s;
+        }
+        .date-cell.selected {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
+        }
+        .date-cell.disabled {
+            color: #ccc;
+            cursor: not-allowed;
+            background-color: transparent;
+        }
+        .date-cell:not(.disabled):hover {
+            background-color: #e0e7ff; /* indigo-100 */
+        }
+        .date-cell.today {
+            border: 2px solid #4f46e5;
+        }
     </style>
-    <!-- Blok script type="module" untuk otentikasi Firebase telah dihilangkan sepenuhnya -->
+    <!-- Script Apps Script untuk menyuntikkan data server (Asumsi data disuntikkan via template variable di Code.gs) -->
 </head>
 <body class="min-h-screen p-4 sm:p-8">
     
     <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-2xl shadow-xl">
-        <h1 class="text-3xl font-bold text-indigo-700 mb-6 border-b pb-4">Activity Log MP TAM (Mode Dev)</h1>
+        <h1 class="text-3xl font-bold text-indigo-700 mb-6 border-b pb-4">Activity Log MP TAM</h1>
         
-        <!-- Informasi Supervisor & App ID (Menggunakan nilai statis) -->
-        <div class="text-sm text-gray-500 mb-6 bg-indigo-50 p-3 rounded-lg">
-            <p>ID Supervisor: <span id="supervisor-id" class="font-mono text-indigo-600">DEV_MODE</span></p>
-            <p>ID Aplikasi: <span id="app-id-display" class="font-mono text-indigo-600 text-xs">Loading...</span></p>
-            <p class="mt-2 font-medium text-xs text-red-700">Catatan: Fitur Google Sheet dan Upload File disimulasikan dan hasilnya hanya tercetak di konsol (Console Log).</p>
+        <!-- Informasi Supervisor & App ID (Dihapus sesuai permintaan) -->
+        <div class="text-sm text-gray-500 mb-6 bg-red-100 p-3 rounded-lg">
+            <p class="font-medium text-xs text-red-700">Peringatan: Fungsionalitas upload file ke Drive harus diselesaikan di Code.gs.</p>
         </div>
 
         <!-- Bagian Pemilihan Tim dan Karyawan -->
@@ -58,9 +83,7 @@
                 <label for="team-select" class="block text-sm font-medium text-gray-700 mb-1">Pilih Tim</label>
                 <select id="team-select" onchange="window.supervisorApp.selectTeam(this.value)" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm">
                     <option value="" disabled selected>-- Pilih Tim --</option>
-                    <option value="Red">Red</option>
-                    <option value="White">White</option>
-                    <option value="Blue">Blue</option>
+                    <!-- Opsi Tim akan diisi oleh JS berdasarkan data dari Code.gs -->
                 </select>
             </div>
             
@@ -143,20 +166,38 @@
         <!-- Formulir Ijin Sakit (Page 2) -->
         <div id="page-sakit" class="mt-8 hidden p-6 border border-indigo-300 rounded-xl bg-white shadow-lg">
             <h2 class="text-2xl font-bold text-indigo-700 mb-4">Form Ijin Sakit & Upload Surat</h2>
-            <p class="text-sm text-gray-600 mb-6">Supervisor: Pilih tanggal sakit (dipisahkan koma untuk multiple) dan upload surat sakit karyawan.</p>
+            <p class="text-sm text-gray-600 mb-6">Supervisor: Pilih tanggal sakit (bisa lebih dari satu) dan upload surat sakit karyawan.</p>
             <form id="form-sakit" onsubmit="window.supervisorApp.submitForm('sakit', event)" class="space-y-5">
                 
+                <!-- Bagian Pemilihan Tanggal Multi-Pilih -->
                 <div>
-                    <label for="sick-dates" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Ijin Sakit (Contoh: 2025-10-01, 2025-10-02)</label>
-                    <input type="text" id="sick-dates" placeholder="yyyy-mm-dd, yyyy-mm-dd..." required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    <p class="text-xs text-gray-500 mt-1">Tanggal masa lalu yang bisa dipilih maksimal adalah H-1 (Kemarin).</p>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Tanggal Ijin Sakit (Maks. H-1)</label>
+                    <input type="hidden" id="sick-dates-hidden" required value="">
+                    <div class="p-4 border border-gray-300 rounded-lg shadow-sm bg-white">
+                        <div id="date-picker-header" class="flex justify-between items-center mb-3">
+                            <button type="button" onclick="window.supervisorApp.navigateMonth(-1)" class="p-1 rounded-full hover:bg-gray-100">
+                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                            </button>
+                            <span id="current-month-year" class="font-semibold text-gray-800"></span>
+                            <button type="button" onclick="window.supervisorApp.navigateMonth(1)" class="p-1 rounded-full hover:bg-gray-100">
+                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            </button>
+                        </div>
+                        <div id="date-picker-weekdays" class="date-picker-grid text-xs font-medium text-gray-500 mb-2">
+                            <span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span>
+                        </div>
+                        <div id="date-picker-body" class="date-picker-grid text-sm">
+                            <!-- Cells will be rendered here -->
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Tanggal yang dipilih: <span id="selected-dates-display" class="font-mono text-indigo-600"></span></p>
+                    <p class="text-xs text-red-500 mt-1" id="date-error" style="display: none;">Harap pilih setidaknya satu tanggal.</p>
                 </div>
 
                 <div>
                     <label for="sick-note-file" class="block text-sm font-medium text-gray-700 mb-1">Upload Surat Sakit (Dokter/Klinik)</label>
-                    <!-- Menambahkan 'capture=camera' untuk mendukung kamera HP -->
                     <input type="file" id="sick-note-file" accept=".pdf,image/*" capture="camera" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                    <p class="text-xs text-gray-500 mt-1">Max 10MB. Nama file akan disimulasikan sebagai 'yyyy-mm-dd_nama karyawan_dd-mmm-yyyy'.</p>
+                    <p class="text-xs text-gray-500 mt-1">Max 10MB. File harus di-upload untuk membuat link 'Lampiran'.</p>
                 </div>
                 
                 <button type="submit" class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-red-700 transition duration-300">
@@ -177,40 +218,22 @@
         // Global State and Logic
         window.supervisorApp = (function() {
             // --- KONSTANTA APLIKASI ---
-            const GSHEET_FILE_ID = '1VhLZVv8yZlqOOqj_TiH8ycetOQoEGYIJlyUCFFXA3vc';
-            const DRIVE_FOLDER_ID = '1D71xhO6ta8R_q8HNOv7aQNx6txixdVuh';
             const MAX_FILE_SIZE_MB = 10;
-            const supervisorId = 'DEV_MODE'; // Statis karena otentikasi dinonaktifkan
-
+            // Gunakan `google.script.run` untuk mendapatkan ID supervisor jika diperlukan,
+            // tetapi untuk deployment "Execute as me", ID tidak ditampilkan di UI.
+            const supervisorId = 'APPS_SCRIPT_USER'; 
+            
+            // Data disuntikkan oleh Code.gs melalui template variable
+            // Pastikan employeeData didefinisikan pada template di Code.gs.
+            const employeeDatabase = <?= JSON.stringify(employeeData || {}) ?>; 
+            
             // --- STATE GLOBAL ---
             let selectedTeam = '';
-            let selectedEmployee = null; // { name: '...', nrk: '...' }
+            let selectedEmployee = null; 
             let currentFilter = '';
             let showAllEmployees = false;
-            
-            // --- Mock Employee Data (Simulasi data dari Sheet 'MP') ---
-            // Data ini digunakan sebagai pengganti API call GSheet untuk mode development
-            const employeeDatabase = {
-                'Red': [
-                    { team: 'Red', nrk: 'R1001', name: 'Bambang Sudarsono' },
-                    { team: 'Red', nrk: 'R1002', name: 'Siti Nurhaliza' },
-                    { team: 'Red', nrk: 'R1003', name: 'Joko Widodo' },
-                    { team: 'Red', nrk: 'R1004', name: 'Ayu Tingting' },
-                    { team: 'Red', nrk: 'R1005', name: 'Denny Sumargo' },
-                    { team: 'Red', nrk: 'R1006', name: 'Raisa Andriana' },
-                    { team: 'Red', nrk: 'R1007', name: 'Tulus Pamungkas' },
-                ],
-                'White': [
-                    { team: 'White', nrk: 'W2001', name: 'Michael Jordan' },
-                    { team: 'White', nrk: 'W2002', name: 'LeBron James' },
-                    { team: 'White', nrk: 'W2003', name: 'Kobe Bryant' },
-                    { team: 'White', nrk: 'W2004', name: 'Stephen Curry' },
-                ],
-                'Blue': [
-                    { team: 'Blue', nrk: 'B3001', name: 'Dewi Sandra' },
-                    { team: 'Blue', nrk: 'B3002', name: 'Rio Dewanto' },
-                ]
-            };
+            let selectedSickDates = new Set(); // Untuk multi-date picker
+            let currentCalendarDate = new Date(); // Untuk kalender
             
             // --- Pertanyaan Kelayakan (Form Kelayakan) ---
             const kelayakanQuestions = [
@@ -228,8 +251,8 @@
                 'Dalam kondisi fit untuk menjalankan tugas'
             ];
 
-
             // --- DOM Elements ---
+            const $teamSelect = document.getElementById('team-select');
             const $employeeLookupContainer = document.getElementById('employee-lookup-container');
             const $employeeList = document.getElementById('employee-list');
             const $employeeListMessage = document.getElementById('employee-list-message');
@@ -248,6 +271,13 @@
             const $remarksInput = document.getElementById('kelayakan-remarks');
             const $remarkCount = document.getElementById('remark-count');
             const $signatureError = document.getElementById('signature-error');
+            
+            // Calendar Elements
+            const $currentMonthYear = document.getElementById('current-month-year');
+            const $datePickerBody = document.getElementById('date-picker-body');
+            const $selectedDatesDisplay = document.getElementById('selected-dates-display');
+            const $sickDatesHidden = document.getElementById('sick-dates-hidden');
+            const $dateError = document.getElementById('date-error');
 
             // Signature Canvas variables
             let canvas, ctx, isDrawing = false;
@@ -255,14 +285,20 @@
             let lastY = 0;
 
             // --- Helper Functions ---
-
             function showMessage(text, isError = false) {
                 $messageText.innerText = text;
                 $messageBox.classList.remove('hidden');
                 $messageBox.classList.remove('bg-green-500', 'bg-red-500');
                 $messageBox.classList.add(isError ? 'bg-red-500' : 'bg-green-500');
+                
+                // Show then hide after 5 seconds
+                $messageBox.style.opacity = '1';
+                $messageBox.style.transform = 'translateY(0)';
+                
                 setTimeout(() => {
-                    $messageBox.classList.add('hidden');
+                    $messageBox.style.opacity = '0';
+                    $messageBox.style.transform = 'translateY(20px)';
+                    setTimeout(() => $messageBox.classList.add('hidden'), 300); // Wait for transition
                 }, 5000);
             }
 
@@ -280,20 +316,17 @@
             function resetEmployeeSelection() {
                 selectedEmployee = null;
                 selectedTeam = '';
-                document.getElementById('team-select').value = '';
-                $employeeSearch.value = '';
+                $teamSelect.value = '';
+                document.getElementById('employee-search').value = '';
                 $employeeLookupContainer.classList.add('hidden');
                 $selectedEmployeeInfo.classList.add('hidden');
                 hideAllPages();
                 updateButtonsState();
-                renderEmployeeList(); // Clear list
-                showMessage('Pilihan karyawan direset.', true);
+                renderEmployeeList();
+                showMessage('Pilihan karyawan direset.', false);
             }
-            
-            // --- Employee List Logic ---
 
             function renderEmployeeList() {
-                // ... (Logic to filter and render employee list remains the same)
                 if (!selectedTeam) {
                     $employeeListMessage.classList.remove('hidden');
                     $employeeListMessage.innerText = 'Silakan pilih Tim terlebih dahulu.';
@@ -306,7 +339,6 @@
                 const teamData = employeeDatabase[selectedTeam] || [];
                 const searchLower = currentFilter.toLowerCase();
                 
-                // 1. Filter based on search input
                 const filteredEmployees = teamData.filter(emp => 
                     emp.name.toLowerCase().includes(searchLower) || 
                     emp.nrk.toLowerCase().includes(searchLower)
@@ -316,7 +348,6 @@
                     ? filteredEmployees 
                     : filteredEmployees.slice(0, 4);
                 
-                // 2. Render the list
                 $employeeList.innerHTML = '';
                 if (filteredEmployees.length === 0) {
                     $employeeListMessage.classList.remove('hidden');
@@ -331,31 +362,11 @@
                     $employeeList.appendChild(li);
                 });
 
-                // 3. Handle 'More...' button
                 if (filteredEmployees.length > 4) {
                     $showMoreBtn.classList.remove('hidden');
                     $showMoreBtn.innerText = showAllEmployees ? 'Sembunyikan' : `Lebih banyak... (${filteredEmployees.length - 4} lainnya)`;
                 } else {
                     $showMoreBtn.classList.add('hidden');
-                }
-            }
-
-            function selectTeam(team) {
-                // ... (Logic remains the same)
-                selectedTeam = team;
-                selectedEmployee = null;
-                currentFilter = '';
-                $employeeSearch.value = '';
-                $selectedEmployeeInfo.classList.add('hidden');
-                hideAllPages();
-                updateButtonsState();
-                
-                if (team) {
-                    $employeeLookupContainer.classList.remove('hidden');
-                    renderEmployeeList();
-                    showMessage(`Tim ${team} dipilih. Silakan pilih Karyawan.`);
-                } else {
-                    $employeeLookupContainer.classList.add('hidden');
                 }
             }
 
@@ -371,18 +382,16 @@
             }
 
             function selectEmployee(emp) {
-                // ... (Logic remains the same)
                 selectedEmployee = emp;
                 $selectedName.innerText = emp.name;
                 $selectedNRK.innerText = emp.nrk;
                 $selectedEmployeeInfo.classList.remove('hidden');
-                $employeeLookupContainer.classList.add('hidden'); // Hide lookup after selection
+                $employeeLookupContainer.classList.add('hidden'); 
                 updateButtonsState();
                 showMessage(`Karyawan ${emp.name} (${emp.nrk}) dipilih. Sekarang, pilih Halaman Tujuan.`);
             }
 
             function selectPage(page) {
-                // ... (Logic remains the same, with added signature canvas init)
                 if (!selectedEmployee) {
                     showMessage('Harap pilih karyawan terlebih dahulu.', true);
                     return;
@@ -391,20 +400,124 @@
                 hideAllPages();
                 if (page === 'kelayakan') {
                     $pageKelayakan.classList.remove('hidden');
-                    initializeKelayakanForm(); // Setup questions and canvas
+                    initializeKelayakanForm(); 
                     showMessage('Mengisi Form Kelayakan Kerja.', false);
                 } else if (page === 'sakit') {
                     $pageSakit.classList.remove('hidden');
+                    initializeSickDateSelection();
                     showMessage('Mengisi Form Ijin Sakit.', false);
                 }
             }
+            
+            // --- CALENDAR LOGIC (Multi-Date Picker) ---
+            
+            function initializeSickDateSelection() {
+                selectedSickDates.clear(); // Reset pilihan tanggal
+                currentCalendarDate = new Date(); // Reset kalender ke bulan saat ini
+                renderCalendar();
+                updateSickDateDisplay();
+            }
 
-            // --- Signature Canvas Logic (Form Kelayakan) ---
+            function getFormattedDateKey(date) {
+                // Format YYYY-MM-DD
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+
+            function navigateMonth(direction) {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+                renderCalendar();
+            }
+
+            function selectDate(dateKey) {
+                const dateObj = new Date(dateKey);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // Batas H-1 (Kemarin). Tanggal hari ini dan masa depan tidak bisa dipilih.
+                if (dateObj >= today) {
+                    showMessage('Tanggal yang dipilih tidak boleh hari ini atau masa depan (maksimal H-1).', true);
+                    return;
+                }
+
+                if (selectedSickDates.has(dateKey)) {
+                    selectedSickDates.delete(dateKey);
+                } else {
+                    selectedSickDates.add(dateKey);
+                }
+                renderCalendar(); // Render ulang untuk update tampilan
+                updateSickDateDisplay();
+                $dateError.style.display = selectedSickDates.size > 0 ? 'none' : 'block';
+            }
+
+            function updateSickDateDisplay() {
+                const sortedDates = Array.from(selectedSickDates).sort();
+                $selectedDatesDisplay.innerText = sortedDates.join(', ');
+                $sickDatesHidden.value = sortedDates.join(','); // Update hidden field
+            }
+            
+            function renderCalendar() {
+                $datePickerBody.innerHTML = '';
+                const year = currentCalendarDate.getFullYear();
+                const month = currentCalendarDate.getMonth();
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                
+                const monthName = firstDay.toLocaleDateString('id-ID', { year: 'numeric', month: 'long' });
+                $currentMonthYear.innerText = monthName;
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1); // Batas maksimal H-1
+
+                // Padding untuk hari pertama (0=Min, 1=Sen, ...)
+                let dayOfWeek = firstDay.getDay(); // Sunday is 0, Monday is 1...
+                let startPadding = dayOfWeek; // Jika hari pertama adalah Minggu, padding 0. Jika Senin, padding 1, dst.
+                
+                for (let i = 0; i < startPadding; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.className = 'date-cell disabled';
+                    $datePickerBody.appendChild(emptyCell);
+                }
+
+                for (let day = 1; day <= lastDay.getDate(); day++) {
+                    const date = new Date(year, month, day);
+                    const dateKey = getFormattedDateKey(date);
+                    const cell = document.createElement('div');
+                    cell.innerText = day;
+                    cell.classList.add('date-cell');
+
+                    // Check disabled state (date > yesterday)
+                    if (date > yesterday) {
+                        cell.classList.add('disabled');
+                    } else {
+                        // Check selected state
+                        if (selectedSickDates.has(dateKey)) {
+                            cell.classList.add('selected');
+                        }
+                        // Add click listener
+                        cell.onclick = () => selectDate(dateKey);
+                    }
+                    
+                    // Check today indicator
+                    if (dateKey === getFormattedDateKey(today)) {
+                        cell.classList.add('today');
+                    }
+                    
+                    $datePickerBody.appendChild(cell);
+                }
+            }
+            
+            // Signature Canvas Logic
             function setupSignatureCanvas() {
                 canvas = document.getElementById('signature-canvas');
                 ctx = canvas.getContext('2d');
                 
-                // Set canvas size responsively
+                // Atur lebar canvas agar responsif
                 const containerWidth = canvas.parentElement.clientWidth;
                 canvas.width = containerWidth;
                 
@@ -460,12 +573,11 @@
                 canvas.addEventListener('touchmove', draw);
                 canvas.addEventListener('touchend', stopDrawing);
 
-                // Fill background white
                 clearCanvas();
             }
             
             function clearCanvas() {
-                if (ctx) {
+                if (ctx && canvas) {
                     ctx.fillStyle = 'white';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     $signatureError.style.display = 'none';
@@ -473,8 +585,10 @@
             }
 
             function getSignatureDataURL() {
-                // Check if the canvas is empty (only white background)
+                if (!canvas) return null;
                 const dataUrl = canvas.toDataURL('image/png');
+                
+                // Buat canvas kosong untuk perbandingan
                 const blankCanvas = document.createElement('canvas');
                 blankCanvas.width = canvas.width;
                 blankCanvas.height = canvas.height;
@@ -482,16 +596,16 @@
                 blankCtx.fillStyle = 'white';
                 blankCtx.fillRect(0, 0, blankCanvas.width, blankCanvas.height);
                 
+                // Cek apakah data URL sama dengan data canvas kosong (artinya kosong)
                 if (dataUrl === blankCanvas.toDataURL('image/png')) {
-                    return null; // Canvas kosong
+                    return null; 
                 }
                 
                 return dataUrl;
             }
             
-            // --- Kelayakan Form Setup ---
+            // Kelayakan Form Setup
             function initializeKelayakanForm() {
-                // 1. Render Questions
                 $kelayakanQuestionsDiv.innerHTML = kelayakanQuestions.map((q, index) => `
                     <div class="border p-4 rounded-lg bg-white shadow-sm">
                         <label class="block text-sm font-semibold text-gray-700 mb-2">${index + 1}. ${q}</label>
@@ -509,53 +623,39 @@
                     </div>
                 `).join('');
 
-                // 2. Setup Remarks character counter
                 $remarksInput.addEventListener('input', () => {
                     $remarkCount.innerText = $remarksInput.value.length;
                 });
                 
-                // 3. Setup Signature Canvas
                 setupSignatureCanvas();
             }
 
-            // --- Submission Logic (Simulated) ---
+            // --- Submission Helper Functions ---
 
             function formatDate(date, format) {
                 const map = {
                     mm: date.getMonth() + 1,
                     dd: date.getDate(),
-                    yy: date.getFullYear().toString().slice(-2),
                     yyyy: date.getFullYear(),
                     HH: ('0' + date.getHours()).slice(-2),
                     MM: ('0' + date.getMinutes()).slice(-2)
                 };
                 
-                // For 'mmm' format (Indonesian Month short form)
                 const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
                 
                 let dateString = format;
                 dateString = dateString.replace('dd', ('0' + map.dd).slice(-2));
                 dateString = dateString.replace('mmm', monthNames[date.getMonth()]);
                 dateString = dateString.replace('yyyy', map.yyyy);
-                dateString = dateString.replace('hh', map.HH); // Use HH for 24h format
+                dateString = dateString.replace('hh', map.HH); 
                 dateString = dateString.replace('mm', map.MM);
+                dateString = dateString.replace('MM', ('0' + map.mm).slice(-2)); 
                 
                 return dateString;
             }
 
-            async function saveToGoogleSheet(sheetName, data) {
-                // Fungsi ini akan menjadi tempat integrasi API Google Sheet (misalnya, Google Apps Script Web App URL)
-                console.log(`\n======================================================`);
-                console.log(`[SIMULASI GSheet] Menyimpan ke File ID: ${GSHEET_FILE_ID} | Sheet: ${sheetName}`);
-                console.log(`Data yang akan disimpan (Format Baris GSheet):`);
-                console.table(data);
-                console.log(`======================================================\n`);
-                
-                await new Promise(resolve => setTimeout(resolve, 1500)); 
+            // --- Submission Logic (REAL APPS SCRIPT CALL) ---
 
-                showMessage(`Data berhasil disimulasikan dan dicatat ke konsol untuk Sheet '${sheetName}'!`);
-            }
-            
             async function submitForm(type, event) {
                 event.preventDefault();
                 
@@ -563,6 +663,14 @@
                     showMessage('Error: Pemilihan karyawan belum selesai.', true);
                     return;
                 }
+                
+                const submitButton = event.target.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.innerHTML;
+                
+                // Set loading state
+                submitButton.disabled = true;
+                submitButton.innerHTML = 'Mengirim... <span class="animate-spin inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>';
+
 
                 const submissionTime = new Date();
                 
@@ -575,20 +683,25 @@
                 };
 
                 let sheetName = '';
-                let gsheetRowData = []; // Array of values to match GSheet columns
+                let gsheetData = null; 
+                let signatureDataUrl = null; 
+                let sickNoteFile = null; 
 
                 // --- FORM KELAYAKAN LOGIC ---
                 if (type === 'kelayakan') {
                     sheetName = 'Form Kelayakan';
                     
-                    const signatureDataUrl = getSignatureDataURL();
+                    signatureDataUrl = getSignatureDataURL();
                     if (!signatureDataUrl) {
                         $signatureError.style.display = 'block';
                         showMessage('Harap masukkan tanda tangan karyawan.', true);
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
                         return;
                     }
                     $signatureError.style.display = 'none';
 
+                    let gsheetRowData = [];
                     // 1. Timestamp (A)
                     gsheetRowData.push(formatDate(submissionTime, 'dd-mmm-yyyy hh:mm')); 
                     // 2. Nama (B)
@@ -598,108 +711,179 @@
 
                     // 4. Pertanyaan D-O (12 Pertanyaan)
                     const formKelayakan = document.getElementById('form-kelayakan');
+                    let allQuestionsAnswered = true;
                     kelayakanQuestions.forEach((q, index) => {
-                        const answer = formKelayakan.querySelector(`input[name="question_${index}"]:checked`)?.value || 'N/A';
+                        // Pastikan semua radio button untuk pertanyaan terjawab
+                        const answer = formKelayakan.querySelector(`input[name="question_${index}"]:checked`)?.value;
+                        if (!answer) {
+                            allQuestionsAnswered = false;
+                            return; // Stop processing this loop for the current question
+                        }
                         gsheetRowData.push(answer);
                     });
+                    
+                    if (!allQuestionsAnswered) {
+                        showMessage("Harap jawab semua pertanyaan kelayakan.", true);
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
+                        return;
+                    }
+
+                    if (gsheetRowData.length !== 15) { // 3 fields + 12 questions
+                        // Ini akan menangani error jika ada pertanyaan yang belum dijawab
+                        if (!formKelayakan.checkValidity()) {
+                            showMessage("Harap lengkapi semua isian wajib di Form Kelayakan.", true);
+                        }
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
+                        return;
+                    }
+
 
                     // 5. Remarks (P)
                     const remarks = $remarksInput.value.trim();
                     gsheetRowData.push(remarks);
 
-                    // 6. Tanda Tangan (Q) - SIMULASI HYPERLINK
-                    // Dalam implementasi nyata, Base64 ini akan diupload ke Drive (Folder ID) 
-                    // dan URL yang dihasilkan akan dimasukkan ke GSheet.
-                    const signatureUrlPlaceholder = `https://drive.google.com/uc?id=[FILE_ID_UPLOADED]`; 
-                    const gsheetHyperlinkFormula = `=HYPERLINK("${signatureUrlPlaceholder}", "Lihat Tanda Tangan ${commonData.employeeNRK}")`;
+                    // 6. Tanda Tangan (Q) - Kirim placeholder, file diupload terpisah di Code.gs
+                    const gsheetHyperlinkFormula = `=HYPERLINK("[FILE_ID_TANDA_TANGAN]", "Lihat Tanda Tangan ${commonData.employeeNRK}")`;
                     gsheetRowData.push(gsheetHyperlinkFormula);
 
-                    // PENTING: Batasi data sampai kolom Q
-                    gsheetRowData = gsheetRowData.slice(0, 17); // A=0, Q=16 -> length 17
+                    gsheetData = gsheetRowData; // Sudah 17 kolom
 
                 } 
                 
                 // --- FORM IJIN SAKIT LOGIC ---
                 else if (type === 'sakit') {
-                    sheetName = 'Ijin Sakit';
-                    const sickDatesInput = document.getElementById('sick-dates').value.trim();
+                    sheetName = 'Form Sakit';
                     const fileInput = document.getElementById('sick-note-file');
                     
-                    if (!sickDatesInput) {
-                        showMessage('Harap masukkan setidaknya satu Tanggal Ijin Sakit.', true);
-                        return;
-                    }
+                    // 1. Validasi Input Tanggal
+                    const dates = $sickDatesHidden.value.split(',').filter(d => d.trim() !== '').sort();
 
-                    // VALIDASI TANGGAL
-                    const dates = sickDatesInput.split(',').map(d => d.trim()).filter(d => d.match(/^\d{4}-\d{2}-\d{2}$/));
                     if (dates.length === 0) {
-                        showMessage('Format tanggal tidak valid. Gunakan format yyyy-mm-dd dan pisahkan dengan koma.', true);
+                        $dateError.style.display = 'block';
+                        showMessage('Harap pilih setidaknya satu Tanggal Ijin Sakit.', true);
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
                         return;
                     }
-                    
-                    // Batasi tanggal masa lalu maksimal H-1
-                    const yesterday = new Date(submissionTime);
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    yesterday.setHours(0, 0, 0, 0);
+                    $dateError.style.display = 'none';
 
-                    for (const dateStr of dates) {
-                        const dateObj = new Date(dateStr);
-                        dateObj.setHours(0, 0, 0, 0);
-
-                        if (dateObj < yesterday) {
-                             showMessage(`Tanggal ${dateStr} terlalu jauh ke masa lalu. Maksimal H-1 (Kemarin) adalah ${formatDate(yesterday, 'yyyy-mm-dd')}.`, true);
-                            return;
-                        }
-                    }
+                    // 2. Validasi File Upload (Opsional, tapi jika diisi harus valid)
+                    let fileHyperlinkFormula = 'N/A (Tidak Ada Lampiran)';
                     
-                    const firstSickDate = dates.sort()[0]; // Ambil tanggal pertama yang paling awal
-                    const firstSickDateFormatted = formatDate(new Date(firstSickDate), 'dd-mmm-yyyy');
-                    
-                    // VALIDASI FILE
-                    let fileNameForGSheet = 'Tidak Ada File Diupload';
-                    let fileSimulatedName = '';
-
                     if (fileInput.files.length > 0) {
                         const file = fileInput.files[0];
                         if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
                             showMessage(`Ukuran file melebihi batas ${MAX_FILE_SIZE_MB}MB.`, true);
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = originalButtonText;
                             return;
                         }
-                        
-                        // Format penamaan file simulasi
-                        fileSimulatedName = `${formatDate(submissionTime, 'yyyy-mm-dd')}_${commonData.employeeName.replace(/\s/g, '_')}_${firstSickDateFormatted}.png`;
-                        
-                        // SIMULASI HYPERLINK
-                        const fileUrlPlaceholder = `https://drive.google.com/uc?id=[FILE_ID_UPLOADED]`; 
-                        fileNameForGSheet = `=HYPERLINK("${fileUrlPlaceholder}", "Lihat Surat Sakit (${file.name})")`;
+                        sickNoteFile = file;
+                        // Placeholder link. Akan diupdate oleh Code.gs
+                        fileHyperlinkFormula = `=HYPERLINK("[FILE_ID_SURAT_SAKIT]", "Lampiran")`;
                     }
+                    
+                    // 3. Generate Multiple Rows (Array 2D)
+                    const submissionTimestamp = formatDate(submissionTime, 'dd-mmm-yyyy hh:mm');
+                    gsheetData = [];
 
-                    // Data untuk GSheet 'Ijin Sakit' (Kolom yang Anda butuhkan)
-                    gsheetRowData.push(formatDate(submissionTime, 'dd-mmm-yyyy hh:mm')); 
-                    gsheetRowData.push(commonData.employeeName);
-                    gsheetRowData.push(commonData.team);
-                    gsheetRowData.push(sickDatesInput); // Semua tanggal sakit
-                    gsheetRowData.push(fileNameForGSheet);
-                    gsheetRowData.push(`[Simulasi Upload ke Folder: ${DRIVE_FOLDER_ID}, Nama File: ${fileSimulatedName}]`);
+                    dates.forEach(dateStr => {
+                        // Pastikan format tanggal yyyy-mm-dd untuk konversi yang benar
+                        const dateParts = dateStr.split('-');
+                        // Tanggal harus dikonversi dengan hati-hati untuk menghindari masalah timezone
+                        // Gunakan new Date(year, monthIndex, day)
+                        const sickDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                        const sickDateFormatted = formatDate(sickDate, 'dd-mmm-yyyy');
+                        
+                        // Kolom A, B, C, D, E
+                        const row = [
+                            submissionTimestamp, 
+                            commonData.employeeName, 
+                            commonData.team,
+                            sickDateFormatted, // D: Tanggal Sakit (dd-mmm-yyyy)
+                            fileHyperlinkFormula 
+                        ];
+                        gsheetData.push(row);
+                    });
+                }
+                
+                // 4. Call Apps Script Server Function
+                const payload = {
+                    sheetName: sheetName,
+                    data: gsheetData, 
+                    // Data tambahan untuk upload file
+                    signatureDataUrl: type === 'kelayakan' ? signatureDataUrl : null,
+                    sickNoteFileName: type === 'sakit' && sickNoteFile ? sickNoteFile.name : null,
+                    employeeNRK: commonData.employeeNRK
+                };
+
+                // Untuk upload file (Surat Sakit), Apps Script memerlukan data file dikirim sebagai parameter terpisah
+                if (sickNoteFile) {
+                    google.script.run
+                        .withSuccessHandler(handleSuccess)
+                        .withFailureHandler(handleFailure)
+                        .processFormSubmissionWithFile(payload, sickNoteFile); 
+                } else {
+                    google.script.run
+                        .withSuccessHandler(handleSuccess)
+                        .withFailureHandler(handleFailure)
+                        .processFormSubmission(payload);
+                }
+                
+                function handleSuccess(response) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+
+                    showMessage(response.message);
+                    document.getElementById(`form-${type}`).reset();
+                    // Reset kalender setelah sukses submit
+                    if (type === 'sakit') {
+                         initializeSickDateSelection();
+                    }
+                    hideAllPages();
+                    resetEmployeeSelection();
+                    clearCanvas();
                 }
 
-                await saveToGoogleSheet(sheetName, gsheetRowData);
-                
-                // Setelah berhasil, reset formulir dan kembali ke pemilihan halaman
-                document.getElementById(`form-${type}`).reset();
-                hideAllPages();
-                resetEmployeeSelection();
-                clearCanvas(); // Pastikan canvas tanda tangan juga direset
+                function handleFailure(error) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+
+                    showMessage(`Error: ${error.message || error}`, true);
+                    console.error("Apps Script Error:", error);
+                }
+            }
+            
+            function selectTeam(team) {
+                selectedTeam = team;
+                $employeeLookupContainer.classList.remove('hidden');
+                $employeeSearch.value = '';
+                currentFilter = '';
+                showAllEmployees = false;
+                renderEmployeeList();
             }
 
-            // Initial rendering
+
+            // --- Initialization ---
+
+            function populateTeamSelect() {
+                const teams = Object.keys(employeeDatabase).sort();
+                teams.forEach(team => {
+                    const option = document.createElement('option');
+                    option.value = team;
+                    option.innerText = team;
+                    $teamSelect.appendChild(option);
+                });
+            }
+
             document.addEventListener('DOMContentLoaded', () => {
-                // Set App ID statis
-                const appId = 'supervisor-app-dev';
-                document.getElementById('app-id-display').innerText = appId;
-                
+                populateTeamSelect();
                 renderEmployeeList();
                 updateButtonsState();
+                // Inisialisasi kalender saat DOM siap
+                initializeSickDateSelection(); 
             });
 
 
@@ -712,7 +896,10 @@
                 resetEmployeeSelection,
                 selectPage,
                 submitForm,
-                clearSignature: clearCanvas
+                clearSignature: clearCanvas,
+                // Calendar methods
+                navigateMonth,
+                selectDate,
             };
         })();
     </script>
