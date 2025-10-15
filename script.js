@@ -10,7 +10,7 @@ $(document).ready(function() {
       type: 'POST',
       url: 'https:                                                  
       data: {
-        '//script.google.com/macros/d/YOUR_SCRIPT_ID/exec',
+        '//script.google.com/macros/d/AKfycbw4XuMOa5c-xdJAw1CG6B00AuiycgtNp9jKaqaNwZ0u3DuQvzMFrqorpchtkjugVpC1/exec', 
       data: {
         'nik': nik,
         'nama': nama,
@@ -36,7 +36,7 @@ $(document).ready(function() {
       type: '// Kirim data ke Google Apps Script
     $.ajax({
       type: 'POST',
-      url: 'https://script.google.com/macros/d/YOUR_SCRIPT_ID/exec',
+      url: 'https://script.google.com/macros/d/AKfycbw4XuMOa5c-xdJAw1CG6B00AuiycgtNp9jKaqaNwZ0u3DuQvzMFrqorpchtkjugVpC1/exec',
       data: {
         'nik': nik,
         'nama': nama,
