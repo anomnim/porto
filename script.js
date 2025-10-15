@@ -1,4 +1,4 @@
-(document).ready(function() {
+$(document).ready(function() {
   $('#absen-masuk-btn').click(function() {
     var nik = $('#nik').val();
     var nama = $('#nama').val();
