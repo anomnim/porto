@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple URL Shortener - Dev 10 Tahun</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>URL Shortener Sederhana 🔗</h1>
+        <p>Pendekkan URL Anda dengan cepat dan mudah!</p>
+
+        <div class="input-group">
+            <input type="url" id="longUrl" placeholder="Masukkan URL panjang di sini..." required>
+            <button id="shortenBtn">Pendekkan</button>
+        </div>
+        
+        <div id="resultBox" class="result-box" style="display: none;">
+            <p>URL Pendek Anda:</p>
+            <input type="text" id="shortUrlOutput" readonly>
+            <button id="copyBtn">Salin</button>
+        </div>
+
+        <hr>
+
+        <h2>Statistik URL Pendek</h2>
+        <div id="statsList" class="stats-list">
+            <p id="noStats">Belum ada URL yang dipendekkan.</p>
+            </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
